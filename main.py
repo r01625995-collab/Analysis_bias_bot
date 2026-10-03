@@ -1,7 +1,7 @@
 import yfinance as yf
 import requests
 import os
-from datetime import datetime
+import pandas as pd
 
 # استدعاء المتغيرات السرية
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
@@ -12,11 +12,17 @@ def get_market_data(symbol='EURUSD=X'):
     data = yf.download(symbol, period='3d', interval='1d')
     
     if len(data) >= 2:
-        # اليوم السابق هو العنصر قبل الأخير
+        # معالجة التحديث الجديد لمكتبة yfinance لتجنب خطأ Series
+        if isinstance(data.columns, pd.MultiIndex):
+            data.columns = data.columns.droplevel(1)
+            
         yesterday_data = data.iloc[-2]
-        pdh = yesterday_data['High']  # Previous Daily High
-        pdl = yesterday_data['Low']   # Previous Daily Low
-        close = yesterday_data['Close']
+        
+        # تحويل البيانات إجبارياً إلى أرقام عادية (Float)
+        pdh = float(yesterday_data['High'])
+        pdl = float(yesterday_data['Low'])
+        close = float(yesterday_data['Close'])
+        
         return pdh, pdl, close
     return None, None, None
 
